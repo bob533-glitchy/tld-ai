@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" class=""><head><script>window.livecodes = window.livecodes || {};</script><title>TLD Ai</title><meta name="title" content="TLD Ai"><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><style id="__livecodes_styles__"></style><script src="https://cdn.jsdelivr.net/npm/es-module-shims@1.10.0/dist/es-module-shims.js" async=""></script><script type="importmap">{
+  "imports": {}
+}</script></head><body>
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TLD Ai</title>
+<style>
+  :root {
+    --bg: #0c0c02; --panel: #1b1b05; --line: #55550f; --text: #fdfde8;
+    --muted: #bcbc7a; --accent: #f7f700; --accent-dark: #d9d900;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(ellipse at 55% 45%, #3b3b05 0%, var(--bg) 60%);
+    color: var(--text); font: 16px/1.5 Inter, system-ui, sans-serif; display: flex;
+  }
+  aside {
+    width: 280px; padding: 16px 8px 16px 12px; display: flex; flex-direction: column; gap: 10px;
+    transition: margin .2s;
+  }
+  aside.collapsed { margin-left: -300px; }
+  .brand { font-weight: 700; padding: 6px 4px 10px; }
+  .row { display: flex; gap: 8px; }
+  button, input { font: inherit; color: inherit; }
+  .btn {
+    background: transparent; border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { border-color: var(--accent); }
+  #newChat { flex: 1; }
+  #search {
+    width: 100%; background: transparent; border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 12px; outline: none;
+  }
+  #search:focus { border-color: var(--accent); }
+  #chatList { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+  .chat-item {
+    padding: 8px 12px; border-radius: 8px; cursor: pointer; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chat-item:hover, .chat-item.active { background: var(--panel); color: var(--text); }
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #messages { flex: 1; overflow-y: auto; padding: 32px 16px 8px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .msg { margin: 14px 0; display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 85%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .user .bubble { background: linear-gradient(135deg, #f7f700, #d9d900); color: #1a1400; }
+  .assistant .bubble { background: var(--panel); border: 1px solid var(--line); }
+  .dl {
+    display: inline-block; margin-top: 8px; padding: 7px 12px; border-radius: 8px;
+    background: linear-gradient(135deg, #f7f700, #d9d900); color: #1a1400; text-decoration: none; font-weight: 600;
+  }
+  .err .bubble { border-color: #c0506a; color: #ffb3c4; }
+  .hero { text-align: center; margin-top: 18vh; font-size: 40px; font-weight: 300; }
+  .hero b { color: var(--accent); font-weight: 400; }
+  .composer-wrap { padding: 0 16px 24px; }
+  .composer {
+    max-width: 760px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  }
+  .composer.has-hero { margin-top: 0; }
+  .composer input[type=text] {
+    flex: 1; background: transparent; border: none; outline: none; padding: 8px 6px; min-width: 0;
+  }
+  .icon {
+    width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer;
+    background: transparent; color: var(--muted); font-size: 22px; line-height: 1;
+  }
+  .icon:hover { color: var(--text); }
+  #send { background: linear-gradient(135deg, #f7f700, #d9d900); color: #1a1400; font-weight: 700; }
+  #send:disabled { opacity: .5; cursor: default; }
+  #fileChip {
+    display: none; max-width: 760px; margin: 0 auto 8px; font-size: 14px; color: var(--muted);
+  }
+  #fileChip span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+  #fileChip a { cursor: pointer; margin-left: 8px; color: var(--accent); }
+  @media (max-width: 720px) { aside { position: absolute; z-index: 5; background: var(--bg); height: 100%; } .hero { font-size: 30px; } }
+</style>
+
+
+<aside id="sidebar">
+  <div class="brand">TLD Ai</div>
+  <div class="row">
+    <button class="btn" id="newChat">✎ New chat</button>
+    <button class="btn" id="collapse" title="Hide sidebar">◧</button>
+  </div>
+  <input id="search" placeholder="Search chats">
+  <div id="chatList"></div>
+</aside>
+
+<main>
+  <div id="messages"><div class="wrap" id="thread"></div></div>
+  <div class="composer-wrap">
+    <div id="fileChip"><span id="fileName"></span><a id="clearFile">remove</a></div>
+    <form class="composer" id="form">
+      <button type="button" class="icon" id="attach" title="Attach a .docx">+</button>
+      <input type="file" id="file" accept=".docx" hidden="">
+      <input type="text" id="input" placeholder="Ask anything, or attach a .docx to fill it out" autocomplete="off">
+      <button type="submit" class="icon" id="send" title="Send">↑</button>
+    </form>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  load() { try { return JSON.parse(localStorage.getItem("chats") || "[]"); } catch { return []; } },
+  save(c) { try { localStorage.setItem("chats", JSON.stringify(c)); } catch {} }
+};
+let chats = store.load();
+let current = null;     // current chat object
+let pendingFile = null;
+
+function newChat() {
+  current = { id: Date.now().toString(), title: "New chat", messages: [] };
+  render(); renderList();
+}
+function renderList() {
+  const q = $("search").value.toLowerCase();
+  const list = $("chatList"); list.innerHTML = "";
+  chats.filter(c => c.title.toLowerCase().includes(q)).forEach(c => {
+    const d = document.createElement("div");
+    d.className = "chat-item" + (current && c.id === current.id ? " active" : "");
+    d.textContent = c.title;
+    d.onclick = () => { current = c; render(); renderList(); };
+    list.appendChild(d);
+  });
+}
+function bubble(m) {
+  const row = document.createElement("div");
+  row.className = "msg " + m.role + (m.error ? " err" : "");
+  const b = document.createElement("div"); b.className = "bubble";
+  b.textContent = m.content;
+  if (m.download) {
+    b.appendChild(document.createElement("br"));
+    const a = document.createElement("a");
+    a.className = "dl"; a.href = m.download.url; a.textContent = "⬇ Download " + m.download.name;
+    b.appendChild(a);
+  }
+  row.appendChild(b);
+  return row;
+}
+function render() {
+  const t = $("thread"); t.innerHTML = "";
+  if (!current.messages.length) {
+    t.innerHTML = '<div class="hero"><b>Hi,</b> what\'s on your mind?</div>';
+  } else {
+    current.messages.forEach(m => t.appendChild(bubble(m)));
+  }
+  $("messages").scrollTop = $("messages").scrollHeight;
+}
+function persist() {
+  if (!chats.includes(current) && current.messages.length) chats.unshift(current);
+  store.save(chats); renderList();
+}
+
+$("attach").onclick = () => $("file").click();
+$("file").onchange = e => {
+  pendingFile = e.target.files[0] || null;
+  $("fileName").textContent = pendingFile ? "📄 " + pendingFile.name : "";
+  $("fileChip").style.display = pendingFile ? "block" : "none";
+};
+$("clearFile").onclick = () => { pendingFile = null; $("file").value = ""; $("fileChip").style.display = "none"; };
+$("newChat").onclick = newChat;
+$("search").oninput = renderList;
+$("collapse").onclick = () => $("sidebar").classList.toggle("collapsed");
+
+$("form").onsubmit = async e => {
+  e.preventDefault();
+  const text = $("input").value.trim();
+  if (!text && !pendingFile) return;
+
+  const userMsg = { role: "user", content: (pendingFile ? "📄 " + pendingFile.name + (text ? "\n" : "") : "") + text };
+  const history = current.messages.filter(m => !m.error && !m.download).map(m => ({ role: m.role, content: m.content }));
+  if (current.title === "New chat") current.title = (text || pendingFile.name).slice(0, 40);
+  current.messages.push(userMsg);
+  persist(); render();
+
+  const fd = new FormData();
+  fd.append("message", text);
+  fd.append("history", JSON.stringify(history));
+  if (pendingFile) fd.append("file", pendingFile);
+  $("input").value = ""; $("clearFile").onclick();
+  $("send").disabled = true;
+
+  const thinking = { role: "assistant", content: "Thinking…" };
+  current.messages.push(thinking); render();
+  try {
+    const r = await fetch("/api/chat", { method: "POST", body: fd });
+    const data = await r.json();
+    current.messages.pop();
+    if (!r.ok || data.error) current.messages.push({ role: "assistant", content: data.error || "Something went wrong.", error: true });
+    else current.messages.push({ role: "assistant", content: data.reply, download: data.download || null });
+  } catch (err) {
+    current.messages.pop();
+    current.messages.push({ role: "assistant", content: "Couldn't reach the server.", error: true });
+  }
+  $("send").disabled = false;
+  persist(); render();
+};
+
+newChat();
+renderList();
+if (chats.length) { /* start fresh, but old chats are in the sidebar */ }
+</script>
+
+
+<script></script></body></html>
